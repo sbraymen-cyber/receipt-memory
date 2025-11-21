@@ -1,0 +1,245 @@
+ //
+//  SarHaptics.swift
+//  Sar - Receipt Reception Haptics
+//
+//  The "Yin" to Apple Pay's "Yang"
+//  Apple Pay = money leaving (firm, final)
+//  Sar = receipt arriving (gentle, welcoming)
+//
+
+import UIKit
+import CoreHaptics
+
+class SarHaptics {
+    
+    // MARK: - Properties
+    
+    private var hapticEngine: CHHapticEngine?
+    private let impactGenerator = UIImpactFeedbackGenerator(style: .soft)
+    private let notificationGenerator = UINotificationFeedbackGenerator()
+    
+    // MARK: - Initialization
+    
+    init() {
+        prepareHaptics()
+    }
+    
+    // MARK: - Setup
+    
+    private func prepareHaptics() {
+        // Prepare the basic feedback generators
+        impactGenerator.prepare()
+        notificationGenerator.prepare()
+        
+        // Setup Core Haptics engine for custom patterns
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else {
+            print("Device doesn't support haptics")
+            return
+        }
+        
+        do {
+            hapticEngine = try CHHapticEngine()
+            try hapticEngine?.start()
+            
+            // Reset engine if it stops
+            hapticEngine?.resetHandler = { [weak self] in
+                print("Haptic engine reset")
+                do {
+                    try self?.hapticEngine?.start()
+                } catch {
+                    print("Failed to restart haptic engine: \(error)")
+                }
+            }
+        } catch {
+            print("Failed to create haptic engine: \(error)")
+        }
+    }
+    
+    // MARK: - Receipt Reception Haptics
+    
+    /// The signature Sar haptic - gentle, welcoming, "your receipt is home"
+    /// This is the opposite of Apple Pay's firm "money leaving" feeling
+    func playReceiptReceivedHaptic() {
+        // Fallback for devices without Core Haptics
+        guard let engine = hapticEngine else {
+            playSimpleReceiptHaptic()
+            return
+        }
+        
+        do {
+            let pattern = try createReceiptReceivedPattern()
+            let player = try engine.makePlayer(with: pattern)
+            try player.start(atTime: CHHapticTimeImmediate)
+        } catch {
+            print("Failed to play custom haptic: \(error)")
+            playSimpleReceiptHaptic()
+        }
+    }
+    
+    /// Simple fallback haptic for older devices
+    private func playSimpleReceiptHaptic() {
+        // Single soft impact, then gentle notification
+        impactGenerator.impactOccurred(intensity: 0.5)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.notificationGenerator.notificationOccurred(.success)
+        }
+    }
+    
+    // MARK: - Custom Haptic Pattern
+    
+    private func createReceiptReceivedPattern() throws -> CHHapticPattern {
+        // Design philosophy:
+        // - Starts gentle (receipt arriving)
+        // - Swells slightly (being captured)
+        // - Fades smoothly (safely stored)
+        // Like catching something soft in your hands
+        
+        var events: [CHHapticEvent] = []
+        
+        // Phase 1: Gentle arrival (0.0 - 0.15s)
+        // Soft tap that says "something is here"
+        events.append(CHHapticEvent(
+            eventType: .hapticTransient,
+            parameters: [
+                CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.3),
+                CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.2)
+            ],
+            relativeTime: 0.0
+        ))
+        
+        // Phase 2: Gentle swell (0.15 - 0.35s)
+        // A soft continuous pulse - like the receipt settling in
+        events.append(CHHapticEvent(
+            eventType: .hapticContinuous,
+            parameters: [
+                CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.4),
+                CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.3)
+            ],
+            relativeTime: 0.15,
+            duration: 0.2
+        ))
+        
+        // Phase 3: Confirmation (0.35s)
+        // Very gentle tap - "all set"
+        events.append(CHHapticEvent(
+            eventType: .hapticTransient,
+            parameters: [
+                CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.25),
+                CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.15)
+            ],
+            relativeTime: 0.35
+        ))
+        
+        return try CHHapticPattern(events: events, parameters: [])
+    }
+    
+    // MARK: - Alternative Patterns
+    
+    /// Even gentler version - for users who prefer minimal haptics
+    func playSubtleReceiptHaptic() {
+        impactGenerator.impactOccurred(intensity: 0.3)
+    }
+    
+    /// More pronounced version - for accessibility or user preference
+    func playPronouncedReceiptHaptic() {
+        guard let engine = hapticEngine else {
+            notificationGenerator.notificationOccurred(.success)
+            return
+        }
+        
+        do {
+            var events: [CHHapticEvent] = []
+            
+            // Firmer but still welcoming
+            events.append(CHHapticEvent(
+                eventType: .hapticTransient,
+                parameters: [
+                    CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.6),
+                    CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.4)
+                ],
+                relativeTime: 0.0
+            ))
+            
+            events.append(CHHapticEvent(
+                eventType: .hapticContinuous,
+                parameters: [
+                    CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.5),
+                    CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.3)
+                ],
+                relativeTime: 0.1,
+                duration: 0.15
+            ))
+            
+            let pattern = try CHHapticPattern(events: events, parameters: [])
+            let player = try engine.makePlayer(with: pattern)
+            try player.start(atTime: CHHapticTimeImmediate)
+        } catch {
+            print("Failed to play pronounced haptic: \(error)")
+        }
+    }
+    
+    // MARK: - Error State
+    
+    /// Haptic for when receipt scan fails
+    func playReceiptFailedHaptic() {
+        notificationGenerator.notificationOccurred(.error)
+    }
+}
+
+// MARK: - Usage Example
+
+/*
+ 
+ // In your NFC reading code:
+ 
+ class NFCReceiptReader: NSObject, NFCNDEFReaderSessionDelegate {
+     
+     let haptics = SarHaptics()
+     
+     func readerSession(_ session: NFCNDEFReaderSession, didDetect tags: [NFCNDEFTag]) {
+         // ... NFC reading logic ...
+         
+         // When receipt is successfully read:
+         DispatchQueue.main.async { [weak self] in
+             self?.haptics.playReceiptReceivedHaptic()
+             // Show success UI
+         }
+     }
+     
+     func readerSession(_ session: NFCNDEFReaderSession, didInvalidateWithError error: Error) {
+         // When reading fails:
+         DispatchQueue.main.async { [weak self] in
+             self?.haptics.playReceiptFailedHaptic()
+             // Show error UI
+         }
+     }
+ }
+ 
+ */
+
+// MARK: - Testing in Simulator
+
+#if targetEnvironment(simulator)
+extension SarHaptics {
+    /// Simulator can't do real haptics, so we log the pattern
+    func logHapticPattern() {
+        print("""
+        
+        🎵 Sar Receipt Haptic Pattern:
+        
+        Phase 1 (0.0s):  Gentle tap   ▫️  (intensity: 0.3, sharpness: 0.2)
+        Phase 2 (0.15s): Soft swell   ～  (intensity: 0.4, duration: 0.2s)
+        Phase 3 (0.35s): Confirmation ▫️  (intensity: 0.25, sharpness: 0.15)
+        
+        Total duration: ~0.4 seconds
+        Feeling: Gentle, welcoming, "your receipt is home"
+        
+        Compare to Apple Pay:
+        Apple Pay: ▪️▪️ (two firm taps, conclusive)
+        Sar:       ▫️～▫️ (arrive, settle, confirm)
+        
+        """)
+    }
+}
+#endif
