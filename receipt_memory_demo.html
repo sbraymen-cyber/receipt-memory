@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt Memory - AI Receipt Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .phone-frame {
+            width: 393px;
+            height: 852px;
+            background: white;
+            border-radius: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            display: flex;
+            gap: 12px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.ai {
+            flex-direction: row;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .ai .avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .user .avatar {
+            background: #007AFF;
+        }
+
+        .message-bubble {
+            max-width: 75%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.5;
+            font-size: 15px;
+        }
+
+        .ai .message-bubble {
+            background: white;
+            color: #1a1a1a;
+            border: 1px solid #e5e5e5;
+        }
+
+        .user .message-bubble {
+            background: #007AFF;
+            color: white;
+        }
+
+        .view-receipt-btn {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            color: #007AFF;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+        }
+
+        .view-receipt-btn:hover {
+            background: #e8e8e8;
+        }
+
+        .suggested-questions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .question-card {
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #e5e5e5;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 15px;
+            color: #1a1a1a;
+        }
+
+        .question-card:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .question-card .emoji {
+            margin-right: 8px;
+            font-size: 18px;
+        }
+
+        .input-container {
+            padding: 16px;
+            background: white;
+            border-top: 1px solid #e5e5e5;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #e5e5e5;
+            border-radius: 24px;
+            font-size: 15px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .input-field:focus {
+            border-color: #007AFF;
+        }
+
+        .send-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #007AFF;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .send-btn:hover {
+            background: #0056b3;
+            transform: scale(1.05);
+        }
+
+        .send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .welcome-message h2 {
+            font-size: 24px;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+        }
+
+        .welcome-message p {
+            color: #666;
+            font-size: 15px;
+            margin-bottom: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-frame">
+        <div class="header">
+            <h1>💭 Receipt Memory</h1>
+        </div>
+        
+        <div class="chat-container" id="chatContainer">
+            <div class="welcome-message">
+                <h2>👋 Welcome!</h2>
+                <p>I remember everything you buy.<br>Ask me anything about your purchases.</p>
+            </div>
+            
+            <div class="suggested-questions">
+                <div class="question-card" onclick="askQuestion('When did I buy that Patagonia jacket?')">
+                    <span class="emoji">🧥</span>
+                    When did I buy that jacket?
+                </div>
+                <div class="question-card" onclick="askQuestion('How much did I spend on restaurants this month?')">
+                    <span class="emoji">🍽️</span>
+                    How much did I spend on restaurants?
+                </div>
+                <div class="question-card" onclick="askQuestion('What is my carbon footprint?')">
+                    <span class="emoji">🌿</span>
+                    What's my carbon footprint?
+                </div>
+                <div class="question-card" onclick="askQuestion('Show me my outdoor gear purchases')">
+                    <span class="emoji">⛰️</span>
+                    Show me outdoor gear purchases
+                </div>
+            </div>
+        </div>
+        
+        <div class="input-container">
+            <input 
+                type="text" 
+                class="input-field" 
+                id="userInput" 
+                placeholder="Ask me anything..."
+                onkeypress="handleKeyPress(event)"
+            >
+            <button class="send-btn" onclick="sendMessage()">→</button>
+        </div>
+    </div>
+
+    <script>
+        // Mock backend responses (simulating the Python backend)
+        const responses = {
+            "jacket": {
+                answer: "You bought a Better Sweater Jacket from Patagonia on November 10th for $89.99 at their Boulder location.",
+                receipt_id: "rec_001"
+            },
+            "restaurant": {
+                answer: "You've spent $67.50 on restaurants in November. You visited The Kitchen on November 12th for dinner.",
+                receipt_id: "rec_002"
+            },
+            "outdoor": {
+                answer: "You've made 2 outdoor gear purchases recently:\n• REI on October 28: Hiking Boots ($129.99), Wool Socks ($18.99), Water Bottle ($24.99) - Total: $156.78\n• Patagonia on November 10: Better Sweater Jacket ($89.99)",
+                receipt_id: "rec_003"
+            },
+            "carbon": {
+                answer: "Your total carbon footprint from tracked purchases is 96.1kg of CO2. Your biggest contributor was the REI hiking gear at 45.2kg.",
+                receipt_id: "rec_003"
+            },
+            "default": {
+                answer: "I can help you with questions like:\n• When did I buy that jacket?\n• How much did I spend on restaurants?\n• What's my carbon footprint?\n• Show me my outdoor gear purchases",
+                receipt_id: null
+            }
+        };
+
+        let conversationStarted = false;
+
+        function getResponse(question) {
+            const q = question.toLowerCase();
+            if (q.includes("jacket") || q.includes("patagonia")) return responses.jacket;
+            if (q.includes("restaurant") || q.includes("dining")) return responses.restaurant;
+            if (q.includes("outdoor") || q.includes("hiking") || q.includes("gear")) return responses.outdoor;
+            if (q.includes("carbon") || q.includes("footprint")) return responses.carbon;
+            return responses.default;
+        }
+
+        function askQuestion(question) {
+            document.getElementById('userInput').value = question;
+            sendMessage();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('userInput');
+            const question = input.value.trim();
+            
+            if (!question) return;
+
+            // Clear welcome message on first interaction
+            if (!conversationStarted) {
+                const chatContainer = document.getElementById('chatContainer');
+                chatContainer.innerHTML = '';
+                conversationStarted = true;
+            }
+
+            // Add user message
+            addMessage(question, 'user');
+            
+            // Clear input
+            input.value = '';
+            
+            // Simulate AI thinking delay
+            setTimeout(() => {
+                const response = getResponse(question);
+                addMessage(response.answer, 'ai', response.receipt_id);
+            }, 500);
+        }
+
+        function addMessage(text, sender, receiptId = null) {
+            const chatContainer = document.getElementById('chatContainer');
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.textContent = sender === 'ai' ? '🤖' : '👤';
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            bubble.innerHTML = text.replace(/\n/g, '<br>');
+            
+            if (receiptId && sender === 'ai') {
+                const btn = document.createElement('button');
+                btn.className = 'view-receipt-btn';
+                btn.textContent = 'View Receipt →';
+                btn.onclick = () => alert(`Opening receipt ${receiptId}\n(In the real app, this would show the full receipt)`);
+                bubble.appendChild(btn);
+            }
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(bubble);
+            chatContainer.appendChild(messageDiv);
+            
+            // Scroll to bottom
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+    </script>
+</body>
+</html>
