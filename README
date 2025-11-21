@@ -1,0 +1,117 @@
+# Receipt Memory - AI-Powered Receipt Assistant
+
+**A conversational AI that lets users query their purchase history using natural language.**
+
+## Overview
+
+Receipt Memory solves a simple problem: digital receipts are only useful if you can actually find them. Instead of scrolling through dozens of receipts or manually categorizing purchases, users can ask natural language questions and get instant answers.
+
+## Features
+
+- 💬 **Natural Language Queries**: Ask questions like "When did I buy that jacket?" or "How much did I spend on restaurants?"
+- 🧾 **Receipt Database**: Stores complete receipt data including items, merchants, timestamps, and carbon footprint
+- 🌿 **Carbon Tracking**: Automatically calculates environmental impact of purchases
+- 📊 **Smart Categorization**: Organizes purchases by category, merchant, and tags
+- 🔗 **Source Attribution**: Every AI response links back to source receipts for transparency
+
+## Demo Queries
+
+Try these example questions:
+- "When did I buy that Patagonia jacket?"
+- "How much have I spent on restaurants this month?"
+- "What's my carbon footprint from purchases?"
+- "Show me all my outdoor gear purchases"
+
+## Technical Architecture
+
+### Backend (`receipt_memory_backend.py`)
+- Python-based receipt database with JSON schema
+- Query handler that interprets natural language questions
+- Returns conversational answers with source receipt IDs
+- In production: would integrate Claude API or similar LLM
+
+### Frontend (`receipt_memory_demo.html`)
+- Mobile-first chat interface
+- Suggested questions for first-time users
+- Real-time message updates with animations
+- Clean, minimal iOS-inspired design
+
+### Receipt Data Schema
+```json
+{
+  "receipt_id": "rec_001",
+  "timestamp": "2024-11-10T10:15:00Z",
+  "merchant": "Patagonia",
+  "location": "Boulder, CO",
+  "total": 89.99,
+  "items": [...],
+  "payment_method": "Credit Card ending in 4242",
+  "tags": ["clothing", "outdoor gear"],
+  "carbon_footprint": 22.3
+}
+```
+
+## Why This Matters
+
+Digital receipts have a discovery problem. Current solutions require:
+- Manual categorization
+- Scrolling through chronological lists
+- Remembering exact purchase dates or merchants
+
+Receipt Memory makes receipts **queryable**—turning static data into a conversational interface that understands context and intent.
+
+## Use Cases
+
+1. **Purchase Memory**: "Where did I buy that blue sweater?"
+2. **Spending Analysis**: "How much did I spend on coffee last month?"
+3. **Carbon Tracking**: "What's my environmental impact?"
+4. **Warranty Management**: "Which purchases still have active warranties?"
+5. **Tax Preparation**: "Show me all business expenses from Q4"
+
+## Design Principles
+
+### Transparency
+Every AI response includes links to source receipts, making data provenance clear.
+
+### Trust
+Users need confidence the AI is pulling from real receipt data, not hallucinating.
+
+### Simplicity
+Complex financial queries are translated into conversational language anyone can understand.
+
+## Current Status
+
+✅ Backend prototype with sample data  
+✅ Conversation design for 15+ query types  
+✅ Mobile chat interface (HTML/CSS/JS demo)  
+🚧 Integration with real receipt scanning (NFC)  
+🚧 React Native production implementation  
+🚧 Claude API integration for production queries  
+
+## What I Learned
+
+Building Receipt Memory taught me:
+- Conversational interfaces for financial data require balancing helpfulness with precision
+- Source attribution is critical for user trust in AI-generated answers
+- Natural language queries are more intuitive than traditional filters/search
+- Receipt metadata (carbon footprint, warranties) becomes valuable when easily queryable
+
+## Future Enhancements
+
+- Voice queries ("Hey Siri, ask Receipt Memory...")
+- Predictive insights ("You usually spend $X on groceries, you're 20% over this month")
+- Shared receipts for households ("What did my partner buy at Target?")
+- Receipt recommendations ("You bought batteries 6 months ago, they might need replacing")
+
+## Built With
+
+- Python (backend logic)
+- HTML/CSS/JavaScript (demo interface)
+- JSON (data storage)
+- Claude API (planned for production)
+
+---
+
+**Created by Sara Braymen** | [sarabraymen.com](https://sarabraymen.com)
+
+*Part of the Sar payments platform - making digital receipts actually useful.*
